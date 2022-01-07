@@ -50,7 +50,7 @@ NOTE: All commands can be run from the in-game chat by replacing `sm_` with `!` 
 
 | Command | Accepts | Values | Description |
 | --- | --- | --- | --- |
-| `fof_gungame_enabled` | boolean | 0-1 | Whether or not Gun Game is enabled |
+| `fof_gungame_enabled_default` | boolean | 0-1 | Whether or not Gun Game is enabled by default on server start |
 | `fof_gungame_config` | string | file path | Location of the Gun Game configuration file |
 | `fof_gungame_fists` | boolean | 0-1 | Whether or not to allow fists in game.  Killing someone with fists will reduce their level |
 | `fof_gungame_heal` | float | 0-100 | Amount of health player recieves when ranking up |
