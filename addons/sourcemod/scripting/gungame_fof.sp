@@ -47,6 +47,8 @@ new String:g_RoundStartSounds[][] =
 #define HUD2_X 0.18
 #define HUD2_Y 0.10
 
+new Handle:fof_gungame_enabled = INVALID_HANDLE;
+new bool:savedEnabled = false;
 new Handle:fof_gungame_config = INVALID_HANDLE;
 new Handle:fof_gungame_fists = INVALID_HANDLE;
 new Handle:fof_gungame_equip_delay = INVALID_HANDLE;
@@ -93,6 +95,11 @@ new Handle:g_Timer_GiveWeapon2[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
 
 new bool:g_AutoSetGameDescription = false;
 
+bool IsEnabled()
+{
+    return GetConVarBool(fof_gungame_enabled);
+}
+
 public Plugin:myinfo =
 {
     name = "[FoF] Gun Game",
@@ -113,7 +120,8 @@ public OnPluginStart()
     CreateConVar("fof_gungame_version", PLUGIN_VERSION, PLUGIN_NAME,
             FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
 
-    CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_NOTIFY, true, 0.0, true, 1.0 );
+	HookConVarChange( fof_gungame_enabled = CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnEnableChange );
+	
     HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, 0 ), OnCfgConVarChanged );
     HookConVarChange( fof_gungame_fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
     HookConVarChange( fof_gungame_equip_delay = CreateConVar( "fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
@@ -130,6 +138,9 @@ public OnPluginStart()
     HookEvent( "player_shoot", Event_PlayerShoot );
     HookEvent( "player_death", Event_PlayerDeath );
     HookEvent("round_start", Event_RoundStart);
+
+    RegAdminCmd( "fof_gungame_enable", Command_Enable, ADMFLAG_GENERIC );
+    RegAdminCmd( "fof_gungame_disable", Command_Disable, ADMFLAG_GENERIC );
 
     RegAdminCmd( "fof_gungame_restart", Command_RestartRound, ADMFLAG_GENERIC );
     RegAdminCmd( "fof_gungame_reload_cfg", Command_ReloadConfigFile, ADMFLAG_CONFIG );
@@ -156,6 +167,19 @@ public OnPluginStart()
     }
 }
 
+public OnEnableChange( Handle:hConVar, const String:szOldValue[], const String:szNewValue[] )
+{
+	if (StringToInt(szOldValue) == 0 && StringToInt(szNewValue) == 1) {
+		Enable();
+		return;
+	}
+	
+	if (StringToInt(szOldValue) == 1 && StringToInt(szNewValue) == 0) {
+		Disable();
+		return;
+	}
+}
+
 public OnPluginEnd()
 {
     AllowMapEnd( true );
@@ -163,6 +187,7 @@ public OnPluginEnd()
 
 public OnClientDisconnect_Post( iClient )
 {
+    if (!IsEnabled()) return;
     //if( iWinner == iClient ) iWinner = 0;
 
     new timeleft;
@@ -172,8 +197,14 @@ public OnClientDisconnect_Post( iClient )
     iPlayerLevel[iClient] = 0;
 }
 
+public OnMapEnd() {
+	savedEnabled = IsEnabled();
+}
+
 public OnMapStart()
 {
+    if (!IsEnabled()) return;
+
     new Handle:mp_teamplay = FindConVar( "mp_teamplay" );
     new Handle:fof_sv_currentmode = FindConVar( "fof_sv_currentmode" );
     if( mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE ){
@@ -217,6 +248,7 @@ public OnMapStart()
 
 RemoveCrates()
 {
+    if (!IsEnabled()) return;
     new ent = INVALID_ENT_REFERENCE;
     while( (ent = FindEntityByClassname(ent, "fof_crate*")) != INVALID_ENT_REFERENCE)
     {
@@ -226,6 +258,8 @@ RemoveCrates()
 
 public OnConfigsExecuted()
 {
+	SetConVarBool(fof_gungame_enabled, savedEnabled);
+
     SetGameDescription(GAME_DESCRIPTION);
     
     AllowMapEnd( false );
@@ -299,6 +333,7 @@ public OnVerConVarChanged( Handle:hConVar, const String:szOldValue[], const Stri
 
 public Action:Command_RestartRound( iClient, nArgs )
 {
+	SetConVarBool(fof_gungame_enabled, true);
     RestartTheGame();
     return Plugin_Handled;
 }
@@ -341,6 +376,7 @@ public Event_PlayerActivate( Handle:hEvent, const String:szEventName[], bool:bDo
 
 public Event_PlayerSpawn( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
+    if (!IsEnabled()) return;
     new iUserID = GetEventInt( hEvent, "userid" );
     new iClient = GetClientOfUserId( iUserID );
     
@@ -356,6 +392,7 @@ public Event_PlayerSpawn( Handle:hEvent, const String:szEventName[], bool:bDontB
 
 public Event_PlayerShoot( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
+    if (!IsEnabled()) return;
     new iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
     if(0 < iClient <= MaxClients)
     {
@@ -365,6 +402,7 @@ public Event_PlayerShoot( Handle:hEvent, const String:szEventName[], bool:bDontB
 
 public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
+    if (!IsEnabled()) return;
     new iVictim = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
     new iKillerUID = GetEventInt( hEvent, "attacker" );
     new iKiller = GetClientOfUserId( iKillerUID );
@@ -541,6 +579,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
 }
 public Action:Timer_GetDrunk( Handle:hTimer, any:iUserID )
 {
+    if (!IsEnabled()) return Plugin_Continue;
     new iClient = GetClientOfUserId( iUserID );
     if( flDrunkness != 0.0 && 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
         SetEntPropFloat( iClient, Prop_Send, "m_flDrunkness", FloatMax( 0.0, GetEntPropFloat( iClient, Prop_Send, "m_flDrunkness" ) + flDrunkness ) );
@@ -549,6 +588,10 @@ public Action:Timer_GetDrunk( Handle:hTimer, any:iUserID )
 
 public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
 {
+	PrintToServer("NATHAN! Round starting (before).");
+    if (!IsEnabled()) return;
+	PrintToServer("NATHAN! Round starting (after).");
+
     RemoveCrates();
 
     //Clear scores
@@ -569,6 +612,7 @@ public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
 
 public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDamage, &iDmgType, &iWeapon, Float:vecDmgForce[3], Float:vecDmgPosition[3], iDmgCustom )
 {
+    if (!IsEnabled()) return Plugin_Continue;
     if( 0 < iVictim <= MaxClients && IsClientInGame( iVictim ) )
     {
         //PrintToChat( iVictim, "cid#%d: dmgtype: %d, killer: %d (%d), dmg: %f, wpn: %d", iVictim, iDmgType, iAttacker, iInflictor, flDamage, iWeapon );
@@ -585,6 +629,7 @@ public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDama
 
 public Hook_WeaponSwitchPost( iClient, iWeapon )
 {
+    if (!IsEnabled()) return;
     if( iClient != iWinner && 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
     {
         WriteLog( "Hook_WeaponSwitchPost(%d): %L", iClient, iClient );
@@ -657,6 +702,7 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
 
 public Hook_OnPlayerResourceThinkPost(ent)
 {
+    if (!IsEnabled()) return;
     new client, level, score;
     for(client = 1; client <= MaxClients; client++)
     {
@@ -673,6 +719,7 @@ public Hook_OnPlayerResourceThinkPost(ent)
 
 public Action:Timer_RespawnAnnounce( Handle:hTimer, any:iUserID )
 {
+    if (!IsEnabled()) return Plugin_Continue;
     CreateTimer( flBonusRoundTime, Timer_RespawnPlayers, .flags = TIMER_FLAG_NO_MAPCHANGE );
     CreateTimer( FloatMax( 0.0, ( flBonusRoundTime - 1.0 ) ), Timer_AllowMapEnd, .flags = TIMER_FLAG_NO_MAPCHANGE );
     if( flBonusRoundTime >= 1.0 )
@@ -682,12 +729,14 @@ public Action:Timer_RespawnAnnounce( Handle:hTimer, any:iUserID )
 
 public Action:Timer_AllowMapEnd( Handle:hTimer, any:iUserID )
 {
+    if (!IsEnabled()) return Plugin_Continue;
     AllowMapEnd( true );
     return Plugin_Stop;
 }
 
 public Action:Timer_RespawnPlayers( Handle:hTimer )
 {
+    if (!IsEnabled()) return Plugin_Continue;
     AllowMapEnd( true );
 
     iWinner = 0;
@@ -759,6 +808,7 @@ public Action:Timer_RespawnPlayers_Fix( Handle:hTimer )
 
 public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
 {
+    if (!IsEnabled()) return Plugin_Continue;
     new iClient = GetClientOfUserId( iUserID );
     if( !( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) ) )
         return Plugin_Stop;
@@ -827,6 +877,7 @@ public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
 
 public Action:Timer_GiveWeapon( Handle:hTimer, Handle:hPack )
 {
+    if (!IsEnabled()) return Plugin_Continue;
     ResetPack( hPack );
 
     new iUserID = ReadPackCell( hPack );
@@ -875,6 +926,7 @@ public Action:Timer_GiveWeapon( Handle:hTimer, Handle:hPack )
 
 public Action:Timer_UseWeapon( Handle:hTimer, Handle:hPack )
 {
+    if (!IsEnabled()) return Plugin_Continue;
     ResetPack( hPack );
 
     new iClient = GetClientOfUserId( ReadPackCell( hPack ) );
@@ -892,6 +944,7 @@ public Action:Timer_UseWeapon( Handle:hTimer, Handle:hPack )
 
 public Action:Timer_Repeat(Handle:timer)
 {
+    if (!IsEnabled()) return Plugin_Continue;
     //NOTE: game is automatically changing game description; use same method as
     //fistful of zombies to set it back.
     if (g_AutoSetGameDescription)
@@ -980,11 +1033,13 @@ public Action:Timer_Repeat(Handle:timer)
                 }
             }
         }
+		
     return Plugin_Handled;
 }
 
 public Action:Timer_Announce( Handle:hTimer, any:iUserID )
 {
+    if (!IsEnabled()) return Plugin_Continue;
     new iClient = GetClientOfUserId( iUserID );
     if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
         PrintToChat( iClient, "\x07FF0000WARNING:\x07FFDA00 This is an unofficial game mode made by \x03XPenia Team\x07FFDA00." );
@@ -994,6 +1049,7 @@ public Action:Timer_Announce( Handle:hTimer, any:iUserID )
     stock _ShowHudText( iClient, Handle:hHudSynchronizer = INVALID_HANDLE, const String:szFormat[], any:... )
 if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
 {
+    if (!IsEnabled()) return;
     //WriteLog( "_ShowHudText(%d): %L", iClient, iClient );
 
     new String:szBuffer[250];
@@ -1011,6 +1067,7 @@ if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
     stock UseWeapon( iClient, const String:szItem[] )
 if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
 {
+    if (!IsEnabled()) return;
     WriteLog( "UseWeapon(%d): %L", iClient, iClient );
     if( IsPlayerAlive( iClient ) )
     {
@@ -1048,6 +1105,7 @@ if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
 
 stock SetAmmo( iClient, iWeapon, iAmmo )
 {
+    if (!IsEnabled()) return;
     if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
     {
         new Handle:hPack;
@@ -1059,6 +1117,7 @@ stock SetAmmo( iClient, iWeapon, iAmmo )
 }
 public Action:Timer_SetAmmo( Handle:hTimer, Handle:hPack )
 {
+    if (!IsEnabled()) return Plugin_Continue;
     ResetPack( hPack );
 
     if( iAmmoOffset <= 0 )
@@ -1079,6 +1138,7 @@ public Action:Timer_SetAmmo( Handle:hTimer, Handle:hPack )
     stock KillEdict( iEdict )
 if( iEdict > MaxClients && IsValidEdict( iEdict ) )
 {
+    if (!IsEnabled()) return;
     WriteLog( "KillEdict: AcceptEntityInput( %d, \"Kill\" )", iEdict );
     AcceptEntityInput( iEdict, "Kill" );
 }
@@ -1086,6 +1146,7 @@ if( iEdict > MaxClients && IsValidEdict( iEdict ) )
     stock StripWeapons( iClient )
 if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
 {
+    if (!IsEnabled()) return;
     WriteLog( "StripWeapons(%d): %L", iClient, iClient );
     for( new iWeapon, bool:bFound, iWeapons[48], String:szClassname[32], s = 0; s < 48; s++ )
     {
@@ -1127,6 +1188,8 @@ if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iCl
 
 stock RestartTheGame()
 {
+	SetConVarBool(fof_gungame_enabled, true);
+
     CreateTimer( 0.0, Timer_RespawnPlayers, .flags = TIMER_FLAG_NO_MAPCHANGE );
 
     PrintCenterTextAll( "GUNGAME HAS BEEN RESTARTED!" );
@@ -1215,6 +1278,8 @@ stock Float:FloatMax( Float:flValue1, Float:flValue2 )
 
 public Action:Command_DumpScores(caller, args)
 {
+    if (!IsEnabled()) return Plugin_Continue;
+
     PrintToConsole(caller, "---------------------------------");
     PrintToConsole(caller, "Leader: %d", iLeader);
     PrintToConsole(caller, "---------------------------------");
@@ -1234,4 +1299,38 @@ public Action:Command_DumpScores(caller, args)
     }
     PrintToConsole(caller, "---------------------------------");
     return Plugin_Handled;
+}
+
+public Action:Command_Enable(caller, args)
+{
+	Enable();
+	return Plugin_Handled;
+}
+
+public Enable() {
+
+    if (IsEnabled()) return;
+
+	SetConVarBool(fof_gungame_enabled, true);
+	RestartTheGame();
+
+	new String:mapList[][] = {"fof_robertlee", "fof_cripplecreek", "fof_fistful", "fof_nest", "fof_desperados", "fof_tortuga", "fof_revenge", "fof_depot", "fof_winterlong", "fof_sweetwater", "fof_overtop", "fof_impact" };
+	new randomNum = GetRandomInt(0, 11);
+	ForceChangeLevel(mapList[randomNum], "Enabled Gun Game");
+}
+
+public Action:Command_Disable(caller, args)
+{
+	Disable();
+	return Plugin_Handled;
+}
+
+public Disable() {
+    if (!IsEnabled()) return;
+	
+	SetConVarBool(fof_gungame_enabled, false);
+	new String:mapList[][] = {"fof_robertlee", "fof_cripplecreek", "fof_fistful", "fof_nest", "fof_desperados", "fof_tortuga", "fof_revenge", "fof_depot", "fof_winterlong", "fof_sweetwater", "fof_overtop", "fof_impact" };
+	
+	new randomNum = GetRandomInt(0, 11);
+	ForceChangeLevel(mapList[randomNum], "Disabled Gun Game");
 }
