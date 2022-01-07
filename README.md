@@ -8,6 +8,10 @@
 
 GunGame for Fistful of Frags
 
+### Notice: This is not the original
+
+This is a fork that adds enable/disable commands.
+
 
 ## Requirements
 * [SourceMod](https://www.sourcemod.net/) 1.10 or later
@@ -35,6 +39,8 @@ NOTE: All commands can be run from the in-game chat by replacing `sm_` with `!` 
 
 | Command | Accepts | Values | SM Admin Flag | Description |
 | --- | --- | --- | --- | --- |
+| `fof_gungame_enable` | None | None | Generic | Enables Gun Game and loads a new random map |
+| `fof_gungame_disable` | None | None | Generic | Disables Gun Game and loads a new random map |
 | `fof_gungame_restart` | None | None | Generic | Force restart the round |
 | `fof_gungame_reload_cfg` | None | None | Config | Force a reload of the configuration file |
 | `fof_gungame_scores` | None | None | Root | (debug) List player score values to console |
