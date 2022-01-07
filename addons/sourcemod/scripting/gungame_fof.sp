@@ -47,7 +47,8 @@ new String:g_RoundStartSounds[][] =
 #define HUD2_X 0.18
 #define HUD2_Y 0.10
 
-new Handle:fof_gungame_enabled = INVALID_HANDLE;
+ConVar fof_gungame_enabled_default;
+new bool:alreadyLoaded = false;
 new bool:savedEnabled = false;
 new Handle:fof_gungame_config = INVALID_HANDLE;
 new Handle:fof_gungame_fists = INVALID_HANDLE;
@@ -97,7 +98,7 @@ new bool:g_AutoSetGameDescription = false;
 
 bool IsEnabled()
 {
-    return GetConVarBool(fof_gungame_enabled);
+    return savedEnabled;
 }
 
 public Plugin:myinfo =
@@ -120,7 +121,7 @@ public OnPluginStart()
     CreateConVar("fof_gungame_version", PLUGIN_VERSION, PLUGIN_NAME,
             FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
 
-	HookConVarChange( fof_gungame_enabled = CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnEnableChange );
+	fof_gungame_enabled_default = CreateConVar( "fof_gungame_enabled_default", "0", "Whether or not Gun Game is enabled by default", FCVAR_NOTIFY, true, 0.0, true, 1.0 );
 	
     HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, 0 ), OnCfgConVarChanged );
     HookConVarChange( fof_gungame_fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
@@ -165,19 +166,6 @@ public OnPluginStart()
 
         RestartTheGame();
     }
-}
-
-public OnEnableChange( Handle:hConVar, const String:szOldValue[], const String:szNewValue[] )
-{
-	if (StringToInt(szOldValue) == 0 && StringToInt(szNewValue) == 1) {
-		Enable();
-		return;
-	}
-	
-	if (StringToInt(szOldValue) == 1 && StringToInt(szNewValue) == 0) {
-		Disable();
-		return;
-	}
 }
 
 public OnPluginEnd()
@@ -258,7 +246,11 @@ RemoveCrates()
 
 public OnConfigsExecuted()
 {
-	SetConVarBool(fof_gungame_enabled, savedEnabled);
+	if (!alreadyLoaded && GetConVarBool(fof_gungame_enabled_default)) {
+		Enable();
+		alreadyLoaded = true;
+		savedEnabled = true;
+	}
 
     SetGameDescription(GAME_DESCRIPTION);
     
@@ -333,7 +325,6 @@ public OnVerConVarChanged( Handle:hConVar, const String:szOldValue[], const Stri
 
 public Action:Command_RestartRound( iClient, nArgs )
 {
-	SetConVarBool(fof_gungame_enabled, true);
     RestartTheGame();
     return Plugin_Handled;
 }
@@ -1188,7 +1179,7 @@ if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iCl
 
 stock RestartTheGame()
 {
-	SetConVarBool(fof_gungame_enabled, true);
+	savedEnabled = true;
 
     CreateTimer( 0.0, Timer_RespawnPlayers, .flags = TIMER_FLAG_NO_MAPCHANGE );
 
@@ -1303,16 +1294,13 @@ public Action:Command_DumpScores(caller, args)
 
 public Action:Command_Enable(caller, args)
 {
+    if (IsEnabled()) return Plugin_Continue;
 	Enable();
 	return Plugin_Handled;
 }
 
 public Enable() {
-
-    if (IsEnabled()) return;
-
-	SetConVarBool(fof_gungame_enabled, true);
-	RestartTheGame();
+	savedEnabled = true;
 
 	new String:mapList[][] = {"fof_robertlee", "fof_cripplecreek", "fof_fistful", "fof_nest", "fof_desperados", "fof_tortuga", "fof_revenge", "fof_depot", "fof_winterlong", "fof_sweetwater", "fof_overtop", "fof_impact" };
 	new randomNum = GetRandomInt(0, 11);
@@ -1321,16 +1309,16 @@ public Enable() {
 
 public Action:Command_Disable(caller, args)
 {
+    if (!IsEnabled()) return Plugin_Continue;
+
 	Disable();
 	return Plugin_Handled;
 }
 
 public Disable() {
-    if (!IsEnabled()) return;
+	savedEnabled = false;
 	
-	SetConVarBool(fof_gungame_enabled, false);
 	new String:mapList[][] = {"fof_robertlee", "fof_cripplecreek", "fof_fistful", "fof_nest", "fof_desperados", "fof_tortuga", "fof_revenge", "fof_depot", "fof_winterlong", "fof_sweetwater", "fof_overtop", "fof_impact" };
-	
 	new randomNum = GetRandomInt(0, 11);
 	ForceChangeLevel(mapList[randomNum], "Disabled Gun Game");
 }
