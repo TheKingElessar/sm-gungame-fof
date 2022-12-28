@@ -251,13 +251,17 @@ public OnConfigsExecuted()
 		alreadyLoaded = true;
 		savedEnabled = true;
 	}
+	
 
     SetGameDescription(GAME_DESCRIPTION);
     
-    AllowMapEnd( false );
     
     ScanConVars();
     ReloadConfigFile();
+	
+	if (IsEnabled()) {
+		AllowMapEnd( false );
+	}
 }
 
 stock ScanConVars()
@@ -579,9 +583,7 @@ public Action:Timer_GetDrunk( Handle:hTimer, any:iUserID )
 
 public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
 {
-	PrintToServer("NATHAN! Round starting (before).");
     if (!IsEnabled()) return;
-	PrintToServer("NATHAN! Round starting (after).");
 
     RemoveCrates();
 
@@ -775,6 +777,7 @@ public Action:Timer_RespawnPlayers( Handle:hTimer )
 
 public Action:Timer_RespawnPlayers_Fix( Handle:hTimer )
 {
+    if (!IsEnabled()) return Plugin_Continue;
     AllowMapEnd( false );
 
     for( new i = 1; i <= MaxClients; i++ )
@@ -961,8 +964,8 @@ public Action:Timer_Repeat(Handle:timer)
     for( new i = 1; i <= MaxClients; i++ )
         if( IsClientInGame( i ) )
         {
-            ClearSyncHud( i, hHUDSync1 );
-            ClearSyncHud( i, hHUDSync2 );
+           // ClearSyncHud( i, hHUDSync1 );
+           // ClearSyncHud( i, hHUDSync2 );
 
             if( iWinner > 0 )
             {
@@ -1294,22 +1297,23 @@ public Action:Command_DumpScores(caller, args)
 
 public Action:Command_Enable(caller, args)
 {
-    if (IsEnabled()) return Plugin_Continue;
+    if (IsEnabled()) return Plugin_Handled;
 	Enable();
 	return Plugin_Handled;
 }
 
 public Enable() {
 	savedEnabled = true;
+	AllowMapEnd( false );
 
-	new String:mapList[][] = {"fof_robertlee", "fof_cripplecreek", "fof_fistful", "fof_nest", "fof_desperados", "fof_tortuga", "fof_revenge", "fof_depot", "fof_winterlong", "fof_sweetwater", "fof_overtop", "fof_impact" };
-	new randomNum = GetRandomInt(0, 11);
-	ForceChangeLevel(mapList[randomNum], "Enabled Gun Game");
+	char nextMap[PLATFORM_MAX_PATH];
+	GetNextMap(nextMap, sizeof(nextMap));
+	ForceChangeLevel(nextMap, "Enabled Gun Game");
 }
 
 public Action:Command_Disable(caller, args)
 {
-    if (!IsEnabled()) return Plugin_Continue;
+    if (!IsEnabled()) return Plugin_Handled;
 
 	Disable();
 	return Plugin_Handled;
@@ -1317,8 +1321,9 @@ public Action:Command_Disable(caller, args)
 
 public Disable() {
 	savedEnabled = false;
+	AllowMapEnd( true );
 	
-	new String:mapList[][] = {"fof_robertlee", "fof_cripplecreek", "fof_fistful", "fof_nest", "fof_desperados", "fof_tortuga", "fof_revenge", "fof_depot", "fof_winterlong", "fof_sweetwater", "fof_overtop", "fof_impact" };
-	new randomNum = GetRandomInt(0, 11);
-	ForceChangeLevel(mapList[randomNum], "Disabled Gun Game");
+	char nextMap[PLATFORM_MAX_PATH];
+	GetNextMap(nextMap, sizeof(nextMap));
+	ForceChangeLevel(nextMap, "Disabled Gun Game");
 }

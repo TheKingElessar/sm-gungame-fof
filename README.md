@@ -10,7 +10,7 @@ GunGame for Fistful of Frags
 
 ### Notice: This is not the original
 
-This is a fork that adds enable/disable commands.
+This is a fork that adds enable/disable commands. Primarily modified 2022/01/07 and 2022/12/28.
 
 
 ## Requirements
