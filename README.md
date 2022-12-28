@@ -1,26 +1,20 @@
 # sm-gungame-fof
 
-![Build Status](https://github.com/CrimsonTautology/sm-gungame-fof/workflows/Build%20plugins/badge.svg?style=flat-square)
-[![GitHub stars](https://img.shields.io/github/stars/CrimsonTautology/sm-gungame-fof?style=flat-square)](https://github.com/CrimsonTautology/sm-gungame-fof/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/CrimsonTautology/sm-gungame-fof.svg?style=flat-square&logo=github&logoColor=white)](https://github.com/CrimsonTautology/sm-gungame-fof/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/CrimsonTautology/sm-gungame-fof.svg?style=flat-square&logo=github&logoColor=white)](https://github.com/CrimsonTautology/sm-gungame-fof/pulls)
-[![GitHub All Releases](https://img.shields.io/github/downloads/CrimsonTautology/sm-gungame-fof/total.svg?style=flat-square&logo=github&logoColor=white)](https://github.com/CrimsonTautology/sm-gungame-fof/releases)
-
 GunGame for Fistful of Frags
 
-### Notice: This is not the original
+## Notice: This is not the original GunGame for FoF
 
-This is a fork that adds enable/disable commands. Primarily modified 2022/01/07 and 2022/12/28.
+**This is a fork that adds enable/disable commands. Primarily modified 2022/01/07 and 2022/12/28.**
 
 
 ## Requirements
-* [SourceMod](https://www.sourcemod.net/) 1.10 or later
+* [SourceMod](https://www.sourcemod.net/) 1.11 or later
 
 
 ## Installation
 Make sure your server has SourceMod installed.  See [Installing SourceMod](https://wiki.alliedmods.net/Installing_SourceMod).  If you are new to managing SourceMod on a server be sure to read the '[Installing Plugins](https://wiki.alliedmods.net/Managing_your_sourcemod_installation#Installing_Plugins)' section from the official SourceMod Wiki.
 
-Download the latest [release](https://github.com/CrimsonTautology/sm-gungame-fof/releases/latest) and copy the contents of `addons` to your server's `addons` directory. 
+Download the latest [release](https://github.com/TheNathanSpace/sm-gungame-fof/releases/latest) and copy the contents of `addons` to your server's `addons` directory. 
 
 SteamWorks extension is also required for the server to run correctly. Get the latest build for either windows or linux here: https://users.alliedmods.net/~kyles/builds/SteamWorks/. Again, copy the contents of `addons` to your servers `addons` directory. 
 
@@ -39,8 +33,8 @@ NOTE: All commands can be run from the in-game chat by replacing `sm_` with `!` 
 
 | Command | Accepts | Values | SM Admin Flag | Description |
 | --- | --- | --- | --- | --- |
-| `fof_gungame_enable` | None | None | Generic | Enables Gun Game and loads a new random map |
-| `fof_gungame_disable` | None | None | Generic | Disables Gun Game and loads a new random map |
+| `fof_gungame_enable` | None | None | Generic | Enables Gun Game and loads the next map |
+| `fof_gungame_disable` | None | None | Generic | Disables Gun Game and loads the next map |
 | `fof_gungame_restart` | None | None | Generic | Force restart the round |
 | `fof_gungame_reload_cfg` | None | None | Config | Force a reload of the configuration file |
 | `fof_gungame_scores` | None | None | Root | (debug) List player score values to console |
@@ -87,20 +81,12 @@ make install SRCDS=/path/to/srcds
 make uninstall SRCDS=/path/to/srcds
 ```
 
-
-## Contributing
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-
 ## License
 [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/)
 
 
 ## Acknowledgements
+
+* [ CrimsonTautolog's FoF Gun Game plugin](https://github.com/CrimsonTautology/sm-gungame-fof)
 
 * [Leonardo's Original FoF Gun Game plugin](https://gitlab.com/xpenia/gamemods/fof-gungame)

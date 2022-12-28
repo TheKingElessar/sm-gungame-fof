@@ -16,7 +16,7 @@
 #undef REQUIRE_EXTENSIONS
 #tryinclude <steamworks>
 
-#define PLUGIN_VERSION "1.10.0"
+#define PLUGIN_VERSION "1.11.0"
 #define PLUGIN_NAME "[FoF] Gun Game"
 #define CHAT_PREFIX "\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX "[GunGame] "
@@ -104,10 +104,10 @@ bool IsEnabled()
 public Plugin:myinfo =
 {
     name = "[FoF] Gun Game",
-    author = "CrimsonTautology, Leonardo",
-    description = "Gun Game for Fistful of Frags",
+    author = "CrimsonTautology, Leonardo, Nathan",
+    description = "Gun Game for Fistful of Frags (Nathan's version)",
     version = PLUGIN_VERSION,
-    url = "https://github.com/CrimsonTautology/sm-gungame-fof"
+    url = "https://github.com/TheNathanSpace/sm-gungame-fof"
 };
 
 public APLRes:AskPluginLoad2( Handle:hPlugin, bool:bLateLoad, String:szError[], iErrorLength )
